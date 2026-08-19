@@ -33,6 +33,8 @@ const api = {
     ipcRenderer.send('pages:reveal-folder')
   },
 
+  changePagesLocation: (): Promise<boolean> => ipcRenderer.invoke('pages:change-location'),
+
   setWindowTitle: (title: string): void => {
     ipcRenderer.send('window:set-title', title)
   },

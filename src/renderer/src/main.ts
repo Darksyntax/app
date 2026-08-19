@@ -257,6 +257,12 @@ window.api.onMenu('menu:delete-page', () => {
 })
 window.api.onMenu('menu:export', () => void doExport())
 window.api.onMenu('menu:reveal-folder', () => window.api.revealPagesFolder())
+window.api.onMenu('menu:change-location', () => {
+  void (async () => {
+    await flushSave()
+    await window.api.changePagesLocation()
+  })()
+})
 window.api.onMenu('menu:toggle-sidebar', () => sidebar.toggle())
 window.api.onMenu('menu:find', () => openSearchPanel(view))
 window.api.onMenu('menu:toggle-hyperfocus', () => toggleHyperfocusMode(view))

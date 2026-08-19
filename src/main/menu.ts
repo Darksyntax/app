@@ -43,6 +43,7 @@ export function buildMenu(handlers: MenuHandlers): Menu {
         { label: 'Export…', accelerator: 'CmdOrCtrl+Shift+E', click: () => send('menu:export') },
         { type: 'separator' },
         { label: 'Reveal Pages Folder', click: () => send('menu:reveal-folder') },
+        { label: 'Change Pages Location…', click: () => send('menu:change-location') },
         { type: 'separator' },
         isMac ? { role: 'close' as const } : { role: 'quit' as const }
       ]

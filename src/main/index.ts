@@ -167,6 +167,28 @@ app.whenReady().then(() => {
     shell.openPath(pageStore.pagesDirectory())
   })
 
+  ipcMain.handle('pages:change-location', async (event): Promise<boolean> => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (!win) return false
+    const result = await dialog.showOpenDialog(win, {
+      properties: ['openDirectory', 'createDirectory'],
+      defaultPath: pageStore.currentPagesRoot(),
+      buttonLabel: 'Use This Folder'
+    })
+    if (result.canceled || result.filePaths.length === 0) return false
+    const outcome = pageStore.relocatePagesRoot(result.filePaths[0])
+    if (!outcome.ok) {
+      dialog.showErrorBox('Could Not Change Location', outcome.reason)
+      return false
+    }
+    await dialog.showMessageBox(win, {
+      type: 'info',
+      message: 'Pages location updated',
+      detail: `Your pages now live in:\n${result.filePaths[0]}`
+    })
+    return true
+  })
+
   createWindow()
 
   app.on('activate', () => {
