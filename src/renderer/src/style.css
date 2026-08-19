@@ -310,3 +310,100 @@ body:has(#sidebar.hidden) #editor {
   user-select: none;
   margin-left: 4px;
 }
+
+#modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.32);
+  opacity: 1;
+  transition: opacity 120ms ease;
+}
+
+#modal-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#modal {
+  width: 300px;
+  padding: 28px 24px 20px;
+  border-radius: 14px;
+  background: var(--sidebar-bg);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transform: scale(1);
+  transition: transform 120ms ease;
+}
+
+#modal-overlay.hidden #modal {
+  transform: scale(0.97);
+}
+
+#modal-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  background: var(--row-active);
+  margin-bottom: 14px;
+}
+
+#modal-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+#modal-detail {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
+#modal-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 22px;
+  width: 100%;
+}
+
+#modal-actions button {
+  flex: 1;
+  appearance: none;
+  border: none;
+  border-radius: 999px;
+  padding: 9px 0;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#modal-cancel {
+  background: var(--row-active);
+  color: var(--text);
+}
+
+#modal-cancel:hover {
+  background: var(--row-hover);
+}
+
+#modal-confirm {
+  background: var(--text);
+  color: var(--bg);
+}
+
+#modal-confirm:hover {
+  opacity: 0.85;
+}

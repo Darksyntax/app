@@ -124,20 +124,9 @@ app.whenReady().then(() => {
 
   ipcMain.handle('pages:reorder', (_event, orderedIds: string[]): void => pageStore.reorderPages(orderedIds))
 
-  ipcMain.handle('pages:delete', async (event, id: string): Promise<boolean> => {
-    const win = BrowserWindow.fromWebContents(event.sender)
-    const choice = await dialog.showMessageBox(win!, {
-      type: 'warning',
-      buttons: ['Delete', 'Cancel'],
-      defaultId: 1,
-      cancelId: 1,
-      message: 'Delete this page?',
-      detail: 'This cannot be undone.'
-    })
-    if (choice.response !== 0) return false
-    pageStore.deletePage(id)
-    return true
-  })
+  // Confirmation happens in the renderer's own themed modal now (native
+  // dialog.showMessageBox has no styling hooks); this just performs the delete.
+  ipcMain.handle('pages:delete', (_event, id: string): void => pageStore.deletePage(id))
 
   ipcMain.handle('pages:import', async (event): Promise<{ meta: PageMeta; content: string } | null> => {
     const win = BrowserWindow.fromWebContents(event.sender)

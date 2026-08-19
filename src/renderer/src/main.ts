@@ -10,6 +10,7 @@ import { smartMarkdownKeymap } from './editor/markdownKeymap'
 import { einkTheme, darkTheme } from './editor/theme'
 import { hyperfocusExtension, toggleHyperfocusMode, typewriterExtension } from './editor/modes'
 import { initSidebar } from './sidebar'
+import { confirmModal } from './modal'
 import type { PageMeta } from '../../preload/index'
 import './style.css'
 
@@ -101,8 +102,13 @@ async function createNewPage(): Promise<void> {
 }
 
 async function handleDeletePage(id: string): Promise<void> {
-  const confirmed = await window.api.deletePage(id)
+  const confirmed = await confirmModal({
+    title: 'Delete this page?',
+    detail: 'This cannot be undone.',
+    confirmLabel: 'Delete'
+  })
   if (!confirmed) return
+  await window.api.deletePage(id)
   const wasActive = id === activePageId
   pages = pages.filter((p) => p.id !== id)
   sidebar.removePage(id)

@@ -20,7 +20,7 @@ const api = {
 
   savePageSync: (id: string, content: string): PageMeta | null => ipcRenderer.sendSync('pages:save-sync', { id, content }),
 
-  deletePage: (id: string): Promise<boolean> => ipcRenderer.invoke('pages:delete', id),
+  deletePage: (id: string): Promise<void> => ipcRenderer.invoke('pages:delete', id),
 
   reorderPages: (orderedIds: string[]): Promise<void> => ipcRenderer.invoke('pages:reorder', orderedIds),
 
