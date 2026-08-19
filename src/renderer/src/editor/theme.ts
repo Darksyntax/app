@@ -2,7 +2,10 @@ import { EditorView } from '@codemirror/view'
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import { tags as t } from '@lezer/highlight'
 
-const proseFont = 'ui-serif, Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "PT Serif", serif'
+// Matches the UI chrome's font exactly (see style.css's body rule) so the
+// editor content and the surrounding sidebar/buttons/status bar read as one
+// typeface rather than two competing ones.
+const proseFont = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Helvetica, Arial, sans-serif'
 const monoFont = '"SF Mono", "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace'
 
 const shared = EditorView.theme({
@@ -12,7 +15,10 @@ const shared = EditorView.theme({
   },
   '.cm-scroller': {
     fontFamily: proseFont,
-    lineHeight: '1.75',
+    lineHeight: '1.65',
+    fontKerning: 'normal',
+    fontVariantLigatures: 'common-ligatures',
+    textRendering: 'optimizeLegibility',
     overflowY: 'auto'
   },
   '.cm-content': {
@@ -37,12 +43,12 @@ const shared = EditorView.theme({
   '.cm-heading': {
     fontWeight: '700'
   },
-  '.cm-heading-1': { fontSize: '1.7em', lineHeight: '1.3' },
-  '.cm-heading-2': { fontSize: '1.4em', lineHeight: '1.3' },
-  '.cm-heading-3': { fontSize: '1.2em', lineHeight: '1.3' },
-  '.cm-heading-4': { fontSize: '1.05em' },
-  '.cm-heading-5': { fontSize: '1em', opacity: '0.85' },
-  '.cm-heading-6': { fontSize: '0.95em', opacity: '0.75' },
+  '.cm-heading-1': { fontSize: '1.7em', lineHeight: '1.15', letterSpacing: '-0.015em' },
+  '.cm-heading-2': { fontSize: '1.4em', lineHeight: '1.2', letterSpacing: '-0.012em' },
+  '.cm-heading-3': { fontSize: '1.2em', lineHeight: '1.25', letterSpacing: '-0.008em' },
+  '.cm-heading-4': { fontSize: '1.05em', lineHeight: '1.3', letterSpacing: '-0.004em' },
+  '.cm-heading-5': { fontSize: '1em', lineHeight: '1.35', opacity: '0.85' },
+  '.cm-heading-6': { fontSize: '0.95em', lineHeight: '1.35', opacity: '0.75' },
   '.cm-strong': { fontWeight: '700' },
   '.cm-em': { fontStyle: 'italic' },
   '.cm-strike': { textDecoration: 'line-through' },
