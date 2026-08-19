@@ -147,7 +147,8 @@ const sidebar = initSidebar({
   onCreate: () => void createNewPage(),
   onDelete: (id) => void handleDeletePage(id),
   onImport: () => void doImport(),
-  onExport: () => void doExport()
+  onExport: () => void doExport(),
+  onReorder: (orderedIds) => void window.api.reorderPages(orderedIds)
 })
 
 // --- Editor setup ---------------------------------------------------------
@@ -177,14 +178,19 @@ const view = new EditorView({
 })
 
 async function init(): Promise<void> {
+  // listPages() already comes back sorted by the user's manual drag order --
+  // re-sorting it here (as an earlier version of this function did) would
+  // silently discard that order on every launch. The page that opens by
+  // default is a separate concern: resume whatever was most recently edited,
+  // not just whatever's first in the manually-arranged list.
   pages = await window.api.listPages()
   if (pages.length === 0) pages = [await window.api.createPage()]
-  pages.sort((a, b) => b.updatedAt - a.updatedAt)
-  activePageId = pages[0].id
+  const mostRecent = pages.reduce((a, b) => (b.updatedAt > a.updatedAt ? b : a))
+  activePageId = mostRecent.id
   const content = await window.api.loadPage(activePageId)
   replaceContent(content)
   sidebar.setPages(pages, activePageId)
-  updateTitle(pages[0].title)
+  updateTitle(mostRecent.title)
   updateWordCount()
   view.focus()
 }

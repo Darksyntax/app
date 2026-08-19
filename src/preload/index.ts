@@ -4,6 +4,7 @@ export interface PageMeta {
   id: string
   title: string
   preview: string
+  order: number
   createdAt: number
   updatedAt: number
 }
@@ -20,6 +21,8 @@ const api = {
   savePageSync: (id: string, content: string): PageMeta | null => ipcRenderer.sendSync('pages:save-sync', { id, content }),
 
   deletePage: (id: string): Promise<boolean> => ipcRenderer.invoke('pages:delete', id),
+
+  reorderPages: (orderedIds: string[]): Promise<void> => ipcRenderer.invoke('pages:reorder', orderedIds),
 
   importPage: (): Promise<{ meta: PageMeta; content: string } | null> => ipcRenderer.invoke('pages:import'),
 

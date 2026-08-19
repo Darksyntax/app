@@ -16,6 +16,14 @@ const FILE_FILTERS = [
 // where Electron otherwise shows its own default icon.
 const iconPath = join(__dirname, '../../build/icon.png')
 
+// package.json's "name" is lowercase ("calliope", npm convention); this is what
+// shows up in the About panel and the app menu label, so set the properly-cased
+// display name explicitly rather than relying on that fallback. Note this can't
+// touch the Dock tooltip or Cmd-Tab switcher name in dev mode -- those come from
+// the actual Electron.app bundle we're running from unpackaged, and only take
+// on the real name once the app is packaged (npm run dist:mac).
+app.setName('Calliope')
+
 let mainWindow: BrowserWindow | null = null
 let pendingImportPath: string | null = null
 
@@ -79,6 +87,14 @@ app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.calliope.app')
   pageStore.migrateFromOldAppName('Quire')
 
+  app.setAboutPanelOptions({
+    applicationName: 'Calliope',
+    applicationVersion: app.getVersion(),
+    version: app.getVersion(),
+    iconPath,
+    copyright: 'A lightweight, distraction-free writing app.'
+  })
+
   if (is.dev) app.dock?.setIcon(iconPath)
 
   app.on('browser-window-created', (_, window) => {
@@ -105,6 +121,8 @@ app.whenReady().then(() => {
   ipcMain.on('pages:save-sync', (event, { id, content }: { id: string; content: string }) => {
     event.returnValue = pageStore.savePage(id, content)
   })
+
+  ipcMain.handle('pages:reorder', (_event, orderedIds: string[]): void => pageStore.reorderPages(orderedIds))
 
   ipcMain.handle('pages:delete', async (event, id: string): Promise<boolean> => {
     const win = BrowserWindow.fromWebContents(event.sender)

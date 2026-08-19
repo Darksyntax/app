@@ -7,6 +7,7 @@ export interface PageMeta {
   id: string
   title: string
   preview: string
+  order: number
   createdAt: number
   updatedAt: number
 }
@@ -49,6 +50,22 @@ function migrateLegacyTxtFiles(): void {
   }
 }
 
+// One-time upgrade for pages saved before drag-reordering existed: give them
+// an explicit `order` matching their old implicit updatedAt-descending sort,
+// so nothing visually jumps around the first time this runs.
+let migratedOrderField = false
+function migrateMissingOrder(): void {
+  if (migratedOrderField) return
+  migratedOrderField = true
+  const pages = readManifest()
+  if (pages.every((p) => typeof p.order === 'number')) return
+  const sorted = [...pages].sort((a, b) => b.updatedAt - a.updatedAt)
+  sorted.forEach((p, i) => {
+    p.order = i
+  })
+  writeManifest(sorted)
+}
+
 function readManifest(): PageMeta[] {
   ensureDirs()
   if (!existsSync(manifestPath)) return []
@@ -82,7 +99,8 @@ function derivePreview(content: string): string {
 
 export function listPages(): PageMeta[] {
   migrateLegacyTxtFiles()
-  return readManifest().sort((a, b) => b.updatedAt - a.updatedAt)
+  migrateMissingOrder()
+  return readManifest().sort((a, b) => a.order - b.order)
 }
 
 export function loadPageContent(id: string): string {
@@ -94,15 +112,17 @@ export function loadPageContent(id: string): string {
 export function createPage(initialContent = ''): PageMeta {
   ensureDirs()
   const now = Date.now()
+  const pages = readManifest()
+  const minOrder = pages.length ? Math.min(...pages.map((p) => p.order ?? 0)) : 0
   const meta: PageMeta = {
     id: randomUUID(),
     title: deriveTitle(initialContent),
     preview: derivePreview(initialContent),
+    order: minOrder - 1,
     createdAt: now,
     updatedAt: now
   }
   writeFileSync(pagePath(meta.id), initialContent, 'utf-8')
-  const pages = readManifest()
   pages.push(meta)
   writeManifest(pages)
   return meta
@@ -129,6 +149,17 @@ export function deletePage(id: string): void {
   writeManifest(pages)
   const target = pagePath(id)
   if (existsSync(target)) unlinkSync(target)
+}
+
+// orderedIds is the full list of page ids in their new desired top-to-bottom order.
+export function reorderPages(orderedIds: string[]): void {
+  const pages = readManifest()
+  const byId = new Map(pages.map((p) => [p.id, p]))
+  orderedIds.forEach((id, i) => {
+    const page = byId.get(id)
+    if (page) page.order = i
+  })
+  writeManifest(pages)
 }
 
 export function pageFilePath(id: string): string {

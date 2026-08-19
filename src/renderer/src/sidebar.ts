@@ -6,6 +6,7 @@ export interface SidebarCallbacks {
   onDelete: (id: string) => void
   onImport: () => void
   onExport: () => void
+  onReorder: (orderedIds: string[]) => void
 }
 
 export interface SidebarController {
@@ -16,6 +17,18 @@ export interface SidebarController {
   toggle: () => void
   setVisible: (visible: boolean) => void
   isVisible: () => boolean
+}
+
+const DRAG_THRESHOLD = 4
+
+interface DragState {
+  pointerStartY: number
+  startIndex: number
+  rowEls: HTMLElement[]
+  pagesSnapshot: PageMeta[]
+  rowStep: number
+  dragging: boolean
+  order: number[] // current visual order, expressed as original (pre-drag) indices
 }
 
 function formatRelativeTime(ms: number): string {
@@ -43,11 +56,85 @@ export function initSidebar(callbacks: SidebarCallbacks): SidebarController {
   let pages: PageMeta[] = []
   let activeId: string | null = null
   let visible = localStorage.getItem('calliope:sidebarVisible') !== 'false'
+  let dragState: DragState | null = null
+  let suppressNextClick = false
 
   newButton.addEventListener('click', () => callbacks.onCreate())
   importButton.addEventListener('click', () => callbacks.onImport())
   exportButton.addEventListener('click', () => callbacks.onExport())
   toggleButton.addEventListener('click', () => toggleVisible())
+
+  function beginPossibleDrag(e: MouseEvent, page: PageMeta): void {
+    if (e.button !== 0) return
+    if ((e.target as HTMLElement).closest('.page-row-delete')) return
+    e.preventDefault()
+    const startIndex = pages.findIndex((p) => p.id === page.id)
+    if (startIndex === -1) return
+    const rowEls = Array.from(listEl.querySelectorAll<HTMLElement>('.page-row'))
+    const rowStep = rowEls.length > 1 ? rowEls[1].getBoundingClientRect().top - rowEls[0].getBoundingClientRect().top : rowEls[0].getBoundingClientRect().height
+    dragState = {
+      pointerStartY: e.clientY,
+      startIndex,
+      rowEls,
+      pagesSnapshot: pages.slice(),
+      rowStep: rowStep || 1,
+      dragging: false,
+      order: rowEls.map((_, i) => i)
+    }
+    document.addEventListener('mousemove', onDragMove)
+    document.addEventListener('mouseup', onDragEnd)
+  }
+
+  function onDragMove(e: MouseEvent): void {
+    if (!dragState) return
+    const deltaY = e.clientY - dragState.pointerStartY
+
+    if (!dragState.dragging) {
+      if (Math.abs(deltaY) < DRAG_THRESHOLD) return
+      dragState.dragging = true
+      document.body.style.userSelect = 'none'
+      const draggedEl = dragState.rowEls[dragState.startIndex]
+      draggedEl.classList.add('dragging')
+    }
+
+    const draggedEl = dragState.rowEls[dragState.startIndex]
+    draggedEl.style.transform = `translateY(${deltaY}px)`
+
+    const count = dragState.rowEls.length
+    const rawIndex = Math.min(count - 1, Math.max(0, dragState.startIndex + Math.round(deltaY / dragState.rowStep)))
+    const currentVisualIndex = dragState.order.indexOf(dragState.startIndex)
+    if (rawIndex !== currentVisualIndex) {
+      const newOrder = dragState.order.slice()
+      newOrder.splice(currentVisualIndex, 1)
+      newOrder.splice(rawIndex, 0, dragState.startIndex)
+      newOrder.forEach((originalIndex, newPos) => {
+        if (originalIndex === dragState!.startIndex) return
+        const el = dragState!.rowEls[originalIndex]
+        const shift = (newPos - originalIndex) * dragState!.rowStep
+        el.style.transition = 'transform 120ms ease'
+        el.style.transform = `translateY(${shift}px)`
+      })
+      dragState.order = newOrder
+    }
+  }
+
+  function onDragEnd(): void {
+    document.removeEventListener('mousemove', onDragMove)
+    document.removeEventListener('mouseup', onDragEnd)
+    if (!dragState) return
+    const { dragging, order, pagesSnapshot } = dragState
+    dragState = null
+    if (dragging) {
+      document.body.style.userSelect = ''
+      pages = order.map((originalIndex) => pagesSnapshot[originalIndex])
+      suppressNextClick = true
+      setTimeout(() => {
+        suppressNextClick = false
+      }, 0)
+      callbacks.onReorder(pages.map((p) => p.id))
+      render()
+    }
+  }
 
   function render(): void {
     listEl.replaceChildren()
@@ -80,7 +167,11 @@ export function initSidebar(callbacks: SidebarCallbacks): SidebarController {
       })
 
       row.append(text, deleteButton)
-      row.addEventListener('click', () => callbacks.onSelect(page.id))
+      row.addEventListener('mousedown', (e) => beginPossibleDrag(e, page))
+      row.addEventListener('click', () => {
+        if (suppressNextClick) return
+        callbacks.onSelect(page.id)
+      })
       listEl.appendChild(row)
     }
   }
