@@ -1,0 +1,290 @@
+:root {
+  --bg: #f1f0eb;
+  --text: #232320;
+  --muted: #7c7a74;
+  --sidebar-bg: #ebeae4;
+  --row-hover: rgba(35, 35, 32, 0.05);
+  --row-active: rgba(35, 35, 32, 0.09);
+  --border: rgba(35, 35, 32, 0.1);
+  --grain-opacity: 0.035;
+  --sidebar-width: 240px;
+  color-scheme: light;
+}
+
+:root.theme-dark {
+  --bg: #1e1e1c;
+  --text: #e8e6df;
+  --muted: #8b8878;
+  --sidebar-bg: #191917;
+  --row-hover: rgba(255, 255, 255, 0.05);
+  --row-active: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.08);
+  --grain-opacity: 0;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Spans the full window width above both the sidebar and the editor, and
+   never moves — lets the window be dragged from the empty space near the
+   traffic lights since there's no native title bar. */
+#titlebar-strip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  -webkit-app-region: drag;
+  z-index: 10;
+}
+
+#sidebar {
+  position: fixed;
+  inset: 56px auto 0 0;
+  width: var(--sidebar-width);
+  display: flex;
+  flex-direction: column;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  transform: translateX(0);
+  transition: transform 180ms ease;
+  z-index: 8;
+  -webkit-app-region: no-drag;
+}
+
+#sidebar.hidden {
+  transform: translateX(-100%);
+}
+
+#sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 12px 10px 16px;
+  flex-shrink: 0;
+}
+
+#sidebar-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+#sidebar-new {
+  appearance: none;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--muted);
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#sidebar-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+#sidebar-footer button {
+  appearance: none;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--muted);
+  padding: 10px 16px;
+  cursor: pointer;
+}
+
+#sidebar-new:hover,
+#sidebar-footer button:hover {
+  color: var(--text);
+}
+
+#sidebar-new:hover {
+  background: var(--row-hover);
+}
+
+#sidebar-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2px 0;
+}
+
+.page-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin: 2px 8px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.page-row:hover {
+  background: var(--row-hover);
+}
+
+.page-row.active {
+  background: var(--row-active);
+}
+
+.page-row-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.page-row-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.page-row-preview {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.page-row-delete {
+  appearance: none;
+  border: none;
+  background: none;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--muted);
+  padding: 3px 7px;
+  border-radius: 999px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms ease;
+  flex-shrink: 0;
+}
+
+.page-row:hover .page-row-delete {
+  opacity: 1;
+}
+
+.page-row-delete:hover {
+  color: var(--text);
+  background: var(--row-hover);
+}
+
+#editor {
+  position: fixed;
+  inset: 0 0 0 var(--sidebar-width);
+  height: 100%;
+  transition: left 180ms ease;
+}
+
+body:has(#sidebar.hidden) #editor {
+  left: 0;
+}
+
+/* Matte E Ink Carta texture for the eink theme; --grain-opacity is 0 in dark mode. */
+#editor::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  mix-blend-mode: multiply;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+#status-bar {
+  position: fixed;
+  right: 14px;
+  bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  z-index: 5;
+  padding: 4px 6px;
+  border-radius: 10px;
+  background: var(--bg);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  transition: opacity 150ms ease;
+}
+
+#status-bar.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#markup-toggle,
+#theme-toggle,
+#sidebar-toggle {
+  appearance: none;
+  border: none;
+  background: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+#markup-toggle {
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+#markup-toggle.active {
+  color: var(--text);
+  background: var(--row-active);
+}
+
+#markup-toggle:hover,
+#theme-toggle:hover,
+#sidebar-toggle:hover {
+  color: var(--text);
+  background: var(--row-hover);
+}
+
+#status {
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  user-select: none;
+  margin-left: 4px;
+}
