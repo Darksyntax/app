@@ -27,6 +27,20 @@
   box-sizing: border-box;
 }
 
+/* Every custom button in the chrome is a plain <button>, so resetting focus
+   here covers them all at once instead of repeating it per element. Chromium's
+   default focus ring is an unstyled amber outline that clashes with the rest
+   of the palette; :focus-visible keeps a visible ring for keyboard navigation
+   while not showing it on a plain mouse click. */
+button {
+  outline: none;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
 html,
 body {
   margin: 0;

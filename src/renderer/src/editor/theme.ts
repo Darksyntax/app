@@ -145,7 +145,12 @@ const shared = EditorView.theme({
   },
   '.cm-search input[type="checkbox"]': {
     accentColor: 'var(--ink-accent)',
-    margin: '0'
+    margin: '0',
+    outline: 'none'
+  },
+  '.cm-search input[type="checkbox"]:focus-visible': {
+    outline: '2px solid var(--text)',
+    outlineOffset: '2px'
   },
   '.cm-textfield': {
     appearance: 'none',
@@ -171,10 +176,15 @@ const shared = EditorView.theme({
     fontFamily: proseFont,
     fontSize: '13px',
     cursor: 'pointer',
-    backgroundImage: 'none'
+    backgroundImage: 'none',
+    outline: 'none'
   },
   '.cm-button:hover': {
     background: 'var(--row-active)'
+  },
+  '.cm-button:focus-visible': {
+    outline: '2px solid var(--text)',
+    outlineOffset: '2px'
   },
   '.cm-panel button[name="close"]': {
     appearance: 'none',
@@ -186,11 +196,16 @@ const shared = EditorView.theme({
     cursor: 'pointer',
     marginLeft: 'auto',
     padding: '4px 8px',
-    borderRadius: '6px'
+    borderRadius: '6px',
+    outline: 'none'
   },
   '.cm-panel button[name="close"]:hover': {
     color: 'inherit',
     background: 'var(--row-hover)'
+  },
+  '.cm-panel button[name="close"]:focus-visible': {
+    outline: '2px solid var(--text)',
+    outlineOffset: '2px'
   }
 })
 
