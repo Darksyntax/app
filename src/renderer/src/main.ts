@@ -1,7 +1,7 @@
 import { EditorState, Compartment } from '@codemirror/state'
 import { EditorView, keymap, drawSelection } from '@codemirror/view'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
-import { searchKeymap, openSearchPanel } from '@codemirror/search'
+import { search, searchKeymap, openSearchPanel } from '@codemirror/search'
 import { markdown } from '@codemirror/lang-markdown'
 import { languages } from '@codemirror/language-data'
 import { GFM } from '@lezer/markdown'
@@ -165,6 +165,9 @@ const view = new EditorView({
       livePreview,
       hyperfocusExtension,
       typewriterExtension,
+      // top: true keeps the search panel clear of the status bar in the
+      // bottom-right corner, which is where CodeMirror puts it by default.
+      search({ top: true }),
       themeCompartment.of(einkTheme),
       keymap.of([...smartMarkdownKeymap, ...defaultKeymap, ...historyKeymap, ...searchKeymap]),
       EditorView.updateListener.of((update) => {

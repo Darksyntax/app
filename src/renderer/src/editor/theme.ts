@@ -106,6 +106,91 @@ const shared = EditorView.theme({
   },
   '.cm-cursor': {
     borderLeftColor: 'var(--ink-caret)'
+  },
+
+  // The search/replace panel: CodeMirror renders it with zero styling by
+  // default (raw system buttons and checkboxes), and puts it at the bottom
+  // by default too, which collides with the status bar in that corner --
+  // main.ts configures search({top: true}) to avoid that; this covers the look.
+  '.cm-panels': {
+    background: 'transparent',
+    color: 'var(--text)'
+  },
+  '.cm-panels-top': {
+    borderBottom: '1px solid var(--border)'
+  },
+  '.cm-panel.cm-search': {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 20px',
+    // clears #titlebar-strip's 56px drag region plus a little breathing room
+    marginTop: '56px',
+    background: 'var(--sidebar-bg)',
+    fontFamily: proseFont,
+    fontSize: '13px'
+  },
+  '.cm-search br': {
+    flexBasis: '100%',
+    height: '0'
+  },
+  '.cm-search label': {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    color: 'var(--ink-muted)',
+    cursor: 'pointer',
+    userSelect: 'none'
+  },
+  '.cm-search input[type="checkbox"]': {
+    accentColor: 'var(--ink-accent)',
+    margin: '0'
+  },
+  '.cm-textfield': {
+    appearance: 'none',
+    border: '1px solid var(--border)',
+    borderRadius: '7px',
+    background: 'var(--bg)',
+    color: 'inherit',
+    padding: '5px 10px',
+    fontFamily: proseFont,
+    fontSize: '13px',
+    outline: 'none'
+  },
+  '.cm-textfield:focus': {
+    borderColor: 'var(--ink-accent)'
+  },
+  '.cm-button': {
+    appearance: 'none',
+    border: 'none',
+    borderRadius: '7px',
+    background: 'var(--row-hover)',
+    color: 'inherit',
+    padding: '5px 12px',
+    fontFamily: proseFont,
+    fontSize: '13px',
+    cursor: 'pointer',
+    backgroundImage: 'none'
+  },
+  '.cm-button:hover': {
+    background: 'var(--row-active)'
+  },
+  '.cm-panel button[name="close"]': {
+    appearance: 'none',
+    border: 'none',
+    background: 'none',
+    color: 'var(--ink-muted)',
+    fontSize: '16px',
+    lineHeight: '1',
+    cursor: 'pointer',
+    marginLeft: 'auto',
+    padding: '4px 8px',
+    borderRadius: '6px'
+  },
+  '.cm-panel button[name="close"]:hover': {
+    color: 'inherit',
+    background: 'var(--row-hover)'
   }
 })
 
