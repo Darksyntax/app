@@ -10,6 +10,7 @@ import { smartMarkdownKeymap } from './editor/markdownKeymap'
 import { einkTheme, darkTheme } from './editor/theme'
 import { hyperfocusExtension, toggleHyperfocusMode, typewriterExtension } from './editor/modes'
 import { initSidebar } from './sidebar'
+import { initSidebarViews } from './guide'
 import { confirmModal } from './modal'
 import type { PageMeta } from '../../preload/index'
 import './style.css'
@@ -156,6 +157,8 @@ const sidebar = initSidebar({
   onExport: () => void doExport(),
   onReorder: (orderedIds) => void window.api.reorderPages(orderedIds)
 })
+
+initSidebarViews()
 
 // --- Editor setup ---------------------------------------------------------
 
