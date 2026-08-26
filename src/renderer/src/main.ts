@@ -8,7 +8,7 @@ import { GFM } from '@lezer/markdown'
 import { livePreview, toggleShowMarkup, toggleShowMarkupEffect } from './editor/livePreview'
 import { smartMarkdownKeymap } from './editor/markdownKeymap'
 import { einkTheme, darkTheme } from './editor/theme'
-import { hyperfocusExtension, toggleHyperfocusMode, typewriterExtension } from './editor/modes'
+import { hyperfocusExtension, toggleHyperfocusMode, toggleHyperfocusModeEffect, typewriterExtension } from './editor/modes'
 import { initSidebar } from './sidebar'
 import { initSidebarViews } from './guide'
 import { confirmModal } from './modal'
@@ -32,13 +32,15 @@ function getContent(): string {
 
 function replaceContent(content: string): void {
   // Switching or creating a page must not carry over "show markdown syntax"
-  // from whatever page you were just looking at -- there's only one editor
-  // instance under the hood, so without this reset it silently stays on.
+  // or hyperfocus mode from whatever page you were just looking at -- there's
+  // only one editor instance under the hood, so without this reset they'd
+  // silently stay on.
   view.dispatch({
     changes: { from: 0, to: view.state.doc.length, insert: content },
-    effects: toggleShowMarkupEffect.of(false)
+    effects: [toggleShowMarkupEffect.of(false), toggleHyperfocusModeEffect.of(false)]
   })
   markupToggleEl.classList.remove('active')
+  hyperfocusToggleEl.classList.remove('active')
 }
 
 function updateTitle(title: string): void {
@@ -249,6 +251,17 @@ function handleToggleShowMarkup(): void {
 
 markupToggleEl.addEventListener('click', () => handleToggleShowMarkup())
 
+// --- Hyperfocus mode ------------------------------------------------------
+
+const hyperfocusToggleEl = document.getElementById('hyperfocus-toggle') as HTMLButtonElement
+
+function handleToggleHyperfocus(): void {
+  const active = toggleHyperfocusMode(view)
+  hyperfocusToggleEl.classList.toggle('active', active)
+}
+
+hyperfocusToggleEl.addEventListener('click', () => handleToggleHyperfocus())
+
 // --- Status bar visibility ---------------------------------------------
 
 let statusVisible = localStorage.getItem('calliope:statusVisible') !== 'false'
@@ -277,7 +290,7 @@ window.api.onMenu('menu:change-location', () => {
 })
 window.api.onMenu('menu:toggle-sidebar', () => sidebar.toggle())
 window.api.onMenu('menu:find', () => openSearchPanel(view))
-window.api.onMenu('menu:toggle-hyperfocus', () => toggleHyperfocusMode(view))
+window.api.onMenu('menu:toggle-hyperfocus', () => handleToggleHyperfocus())
 window.api.onMenu('menu:toggle-wordcount', () => toggleStatusVisible())
 window.api.onMenu('menu:toggle-theme', () => cycleTheme())
 window.api.onMenu('menu:toggle-markup', () => handleToggleShowMarkup())

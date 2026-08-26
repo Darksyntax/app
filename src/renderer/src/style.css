@@ -355,6 +355,7 @@ body:has(#sidebar.hidden) #editor {
   pointer-events: none;
 }
 
+#hyperfocus-toggle,
 #markup-toggle,
 #theme-toggle,
 #sidebar-toggle {
@@ -377,11 +378,13 @@ body:has(#sidebar.hidden) #editor {
   font-weight: 700;
 }
 
+#hyperfocus-toggle.active,
 #markup-toggle.active {
   color: var(--text);
   background: var(--row-active);
 }
 
+#hyperfocus-toggle:hover,
 #markup-toggle:hover,
 #theme-toggle:hover,
 #sidebar-toggle:hover {

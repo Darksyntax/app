@@ -13,9 +13,10 @@ export const hyperfocusModeField = StateField.define<boolean>({
   }
 })
 
-export function toggleHyperfocusMode(view: EditorView): void {
+export function toggleHyperfocusMode(view: EditorView): boolean {
   const next = !view.state.field(hyperfocusModeField)
   view.dispatch({ effects: toggleHyperfocusModeEffect.of(next) })
+  return next
 }
 
 // Splits a line's text into sentences (naive: no abbreviation handling, same
