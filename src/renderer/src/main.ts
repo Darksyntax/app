@@ -332,11 +332,20 @@ function resolveTheme(pref: ThemePref): 'eink' | 'dark' {
   return pref
 }
 
+// Referenced by applyTheme below, which runs synchronously as soon as this
+// module loads -- must be declared before that first call, not just before
+// cycleTheme's later, event-driven calls.
+const themeToggleEl = document.getElementById('theme-toggle') as HTMLButtonElement
+
 function applyTheme(pref: ThemePref): void {
   const effective = resolveTheme(pref)
   view.dispatch({ effects: themeCompartment.reconfigure(effective === 'dark' ? darkTheme : einkTheme) })
   document.documentElement.classList.toggle('theme-dark', effective === 'dark')
   document.documentElement.classList.toggle('theme-eink', effective === 'eink')
+  // A dot marks "auto" specifically -- without it, clicking from auto to an
+  // explicit theme that happens to match the system's current appearance
+  // looked like the click did nothing, since the colors don't change either.
+  themeToggleEl.classList.toggle('is-auto', pref === 'auto')
 }
 
 let themePref = (localStorage.getItem('calliope:theme') as ThemePref | null) ?? 'auto'
@@ -348,21 +357,12 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
 })
 
 function cycleTheme(): void {
-  if (themePref === 'auto') {
-    // Auto already renders as whichever of eink/dark matches the system, so
-    // stepping to that same explicit value next would be a no-op click --
-    // go to the other one instead, which is always a visible change.
-    themePref = resolveTheme('auto') === 'dark' ? 'eink' : 'dark'
-  } else if (themePref === 'eink') {
-    themePref = 'dark'
-  } else {
-    themePref = 'auto'
-  }
+  themePref = themePref === 'auto' ? 'eink' : themePref === 'eink' ? 'dark' : 'auto'
   localStorage.setItem('calliope:theme', themePref)
   applyTheme(themePref)
 }
 
-document.getElementById('theme-toggle')?.addEventListener('click', () => cycleTheme())
+themeToggleEl.addEventListener('click', () => cycleTheme())
 
 // --- Markdown syntax visibility -----------------------------------------
 

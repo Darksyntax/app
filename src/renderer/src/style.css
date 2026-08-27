@@ -120,6 +120,24 @@ body {
   margin-top: auto;
 }
 
+/* Marks "auto" specifically, since it can otherwise render identically to
+   whichever explicit theme currently matches the system, with no other way
+   to tell them apart. */
+#theme-toggle {
+  position: relative;
+}
+
+#theme-toggle.is-auto::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text);
+}
+
 #sidebar-main {
   position: fixed;
   inset: 40px auto 0 var(--rail-width);
