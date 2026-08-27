@@ -8,6 +8,7 @@
   --border: rgba(35, 35, 32, 0.1);
   --grain-opacity: 0.035;
   --sidebar-width: 240px;
+  --rail-width: 36px;
   color-scheme: light;
 }
 
@@ -66,35 +67,22 @@ body {
   z-index: 10;
 }
 
-#sidebar {
+/* The rail is permanent -- it never slides away, so it's always there to
+   reopen the panel or switch views (Pages / Markdown Guide / Search) even
+   while #sidebar-main is hidden. Only #sidebar-main animates off-screen. */
+#sidebar-rail {
   position: fixed;
   inset: 56px auto 0 0;
-  width: var(--sidebar-width);
-  display: flex;
-  flex-direction: row;
-  background: var(--sidebar-bg);
-  border-right: 1px solid var(--border);
-  transform: translateX(0);
-  transition: transform 180ms ease;
-  z-index: 8;
-  -webkit-app-region: no-drag;
-}
-
-#sidebar.hidden {
-  transform: translateX(-100%);
-}
-
-/* Switches which view #sidebar-main shows (Pages / Markdown Guide) -- doesn't
-   touch the pages list's height the way the old collapsible drawer did. */
-#sidebar-rail {
-  flex-shrink: 0;
-  width: 36px;
+  width: var(--rail-width);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding-top: 14px;
+  padding: 14px 0 10px;
+  background: var(--sidebar-bg);
   border-right: 1px solid var(--border);
+  z-index: 9;
+  -webkit-app-region: no-drag;
 }
 
 #sidebar-rail button {
@@ -112,6 +100,7 @@ body {
   font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
   font-size: 10px;
   font-weight: 700;
+  flex-shrink: 0;
 }
 
 #sidebar-rail button:hover {
@@ -124,11 +113,28 @@ body {
   background: var(--row-active);
 }
 
+/* Pinned to the bottom of the rail, set apart from the view-switching
+   buttons above it -- it toggles the panel open/closed, not a view. */
+#sidebar-toggle {
+  margin-top: auto;
+}
+
 #sidebar-main {
-  flex: 1;
-  min-width: 0;
+  position: fixed;
+  inset: 56px auto 0 var(--rail-width);
+  width: calc(var(--sidebar-width) - var(--rail-width));
   display: flex;
   flex-direction: column;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  transform: translateX(0);
+  transition: transform 180ms ease;
+  z-index: 8;
+  -webkit-app-region: no-drag;
+}
+
+#sidebar-main.hidden {
+  transform: translateX(-100%);
 }
 
 #sidebar-header {
@@ -461,8 +467,8 @@ body {
   transition: left 180ms ease;
 }
 
-body:has(#sidebar.hidden) #editor {
-  left: 0;
+body:has(#sidebar-main.hidden) #editor {
+  left: var(--rail-width);
 }
 
 /* Matte E Ink Carta texture for the eink theme; --grain-opacity is 0 in dark mode. */
@@ -501,8 +507,7 @@ body:has(#sidebar.hidden) #editor {
 #hyperfocus-toggle,
 #markup-toggle,
 #scratchpad-toggle,
-#theme-toggle,
-#sidebar-toggle {
+#theme-toggle {
   appearance: none;
   border: none;
   background: none;
@@ -532,8 +537,7 @@ body:has(#sidebar.hidden) #editor {
 #hyperfocus-toggle:hover,
 #markup-toggle:hover,
 #scratchpad-toggle:hover,
-#theme-toggle:hover,
-#sidebar-toggle:hover {
+#theme-toggle:hover {
   color: var(--text);
   background: var(--row-hover);
 }

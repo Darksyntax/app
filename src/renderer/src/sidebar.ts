@@ -44,13 +44,13 @@ function formatRelativeTime(ms: number): string {
 }
 
 export function initSidebar(callbacks: SidebarCallbacks): SidebarController {
-  const sidebarEl = document.getElementById('sidebar') as HTMLDivElement
+  const sidebarEl = document.getElementById('sidebar-main') as HTMLDivElement
   const listEl = document.getElementById('sidebar-list') as HTMLDivElement
   const newButton = document.getElementById('sidebar-new') as HTMLButtonElement
   const importButton = document.getElementById('sidebar-import') as HTMLButtonElement
   const exportButton = document.getElementById('sidebar-export') as HTMLButtonElement
-  // Lives outside #sidebar (a fixed sibling) so it stays put and stays clickable
-  // even while the sidebar itself is translated off-screen.
+  // Lives in the permanent rail rather than #sidebar-main, so it stays put and
+  // stays clickable even while #sidebar-main itself is translated off-screen.
   const toggleButton = document.getElementById('sidebar-toggle') as HTMLButtonElement
 
   let pages: PageMeta[] = []

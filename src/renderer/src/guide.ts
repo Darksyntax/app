@@ -6,8 +6,10 @@ export interface SidebarViewsController {
 
 // The rail lets the sidebar switch between Pages, the Markdown Guide, and
 // cross-page Search without shrinking the pages list's available height,
-// unlike the collapsible-drawer approach this replaced.
-export function initSidebarViews(): SidebarViewsController {
+// unlike the collapsible-drawer approach this replaced. The rail stays
+// visible even when #sidebar-main is closed, so picking a view here must
+// also reopen the panel -- onViewSelected does that (see main.ts).
+export function initSidebarViews(onViewSelected?: () => void): SidebarViewsController {
   const railPages = document.getElementById('rail-pages') as HTMLButtonElement
   const railGuide = document.getElementById('rail-guide') as HTMLButtonElement
   const railSearch = document.getElementById('rail-search') as HTMLButtonElement
@@ -41,9 +43,18 @@ export function initSidebarViews(): SidebarViewsController {
     sidebarTitle.textContent = titles[view]
   }
 
-  railPages.addEventListener('click', () => setView('pages'))
-  railGuide.addEventListener('click', () => setView('guide'))
-  railSearch.addEventListener('click', () => setView('search'))
+  railPages.addEventListener('click', () => {
+    setView('pages')
+    onViewSelected?.()
+  })
+  railGuide.addEventListener('click', () => {
+    setView('guide')
+    onViewSelected?.()
+  })
+  railSearch.addEventListener('click', () => {
+    setView('search')
+    onViewSelected?.()
+  })
 
   return { setView }
 }
