@@ -94,7 +94,7 @@ app.whenReady().then(() => {
     applicationVersion: app.getVersion(),
     version: app.getVersion(),
     iconPath,
-    credits: 'Designed and developed by Fernando J Fernandez III',
+    credits: 'Created by Fernando J Fernandez III',
     copyright:
       'Copyright © 2026 Fernando J Fernandez III\n\nLicensed under the MIT License,\nsubject to the Commons Clause License Condition v1.0.'
   })
