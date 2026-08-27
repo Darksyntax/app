@@ -6,6 +6,7 @@ import { markdown } from '@codemirror/lang-markdown'
 import { languages } from '@codemirror/language-data'
 import { GFM } from '@lezer/markdown'
 import { livePreview, toggleShowMarkup, toggleShowMarkupEffect } from './editor/livePreview'
+import { smartTypography } from './editor/smartTypography'
 import { smartMarkdownKeymap } from './editor/markdownKeymap'
 import { einkTheme, darkTheme } from './editor/theme'
 import { hyperfocusExtension, toggleHyperfocusMode, toggleHyperfocusModeEffect, typewriterExtension } from './editor/modes'
@@ -174,6 +175,7 @@ const view = new EditorView({
       EditorView.lineWrapping,
       markdown({ codeLanguages: languages, extensions: [GFM], addKeymap: false }),
       livePreview,
+      smartTypography,
       hyperfocusExtension,
       typewriterExtension,
       // top: true keeps the search panel clear of the status bar in the

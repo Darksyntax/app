@@ -59,7 +59,9 @@ const shared = EditorView.theme({
   '.cm-inline-code': {
     background: 'var(--ink-code-bg)',
     borderRadius: '4px',
-    padding: '0.1em 0.3em'
+    padding: '0.15em 0.35em',
+    lineHeight: '1',
+    verticalAlign: 'baseline'
   },
   '.cm-code-block-line': {
     background: 'var(--ink-code-bg)'
