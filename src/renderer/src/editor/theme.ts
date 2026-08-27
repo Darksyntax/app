@@ -130,8 +130,8 @@ const shared = EditorView.theme({
     alignItems: 'center',
     gap: '8px',
     padding: '12px 20px',
-    // clears #titlebar-strip's 56px drag region plus a little breathing room
-    marginTop: '56px',
+    // clears #titlebar-strip's 40px drag region plus a little breathing room
+    marginTop: '40px',
     background: 'var(--sidebar-bg)',
     fontFamily: proseFont,
     fontSize: '13px'

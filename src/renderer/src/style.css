@@ -62,7 +62,7 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  height: 56px;
+  height: 40px;
   -webkit-app-region: drag;
   z-index: 10;
 }
@@ -72,13 +72,13 @@ body {
    while #sidebar-main is hidden. Only #sidebar-main animates off-screen. */
 #sidebar-rail {
   position: fixed;
-  inset: 56px auto 0 0;
+  inset: 40px auto 0 0;
   width: var(--rail-width);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding: 14px 0 10px;
+  padding: 10px 0 10px;
   background: var(--sidebar-bg);
   border-right: 1px solid var(--border);
   z-index: 9;
@@ -114,14 +114,15 @@ body {
 }
 
 /* Pinned to the bottom of the rail, set apart from the view-switching
-   buttons above it -- it toggles the panel open/closed, not a view. */
-#sidebar-toggle {
+   buttons above it -- these are destinations/actions (open the scratchpad,
+   toggle the panel), not sidebar views. */
+#scratchpad-toggle {
   margin-top: auto;
 }
 
 #sidebar-main {
   position: fixed;
-  inset: 56px auto 0 var(--rail-width);
+  inset: 40px auto 0 var(--rail-width);
   width: calc(var(--sidebar-width) - var(--rail-width));
   display: flex;
   flex-direction: column;
@@ -141,7 +142,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 12px 10px 16px;
+  padding: 10px 12px 10px 16px;
   flex-shrink: 0;
 }
 
@@ -505,9 +506,7 @@ body:has(#sidebar-main.hidden) #editor {
 }
 
 #hyperfocus-toggle,
-#markup-toggle,
-#scratchpad-toggle,
-#theme-toggle {
+#markup-toggle {
   appearance: none;
   border: none;
   background: none;
@@ -528,16 +527,13 @@ body:has(#sidebar-main.hidden) #editor {
 }
 
 #hyperfocus-toggle.active,
-#markup-toggle.active,
-#scratchpad-toggle.active {
+#markup-toggle.active {
   color: var(--text);
   background: var(--row-active);
 }
 
 #hyperfocus-toggle:hover,
-#markup-toggle:hover,
-#scratchpad-toggle:hover,
-#theme-toggle:hover {
+#markup-toggle:hover {
   color: var(--text);
   background: var(--row-hover);
 }

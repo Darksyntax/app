@@ -36,7 +36,9 @@ function createWindow(): BrowserWindow {
     show: false,
     autoHideMenuBar: true,
     titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 18, y: 18 },
+    // Centered for #titlebar-strip's 40px height (~12px traffic light
+    // diameter) -- keep these in sync if that height changes again.
+    trafficLightPosition: { x: 18, y: 14 },
     backgroundColor: '#f1f0eb',
     icon: iconPath,
     webPreferences: {
