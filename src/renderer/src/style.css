@@ -293,6 +293,12 @@ body {
   color: var(--muted);
 }
 
+.search-result-page-notes {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
 .search-result-row {
   padding: 6px 16px;
   font-size: 12px;

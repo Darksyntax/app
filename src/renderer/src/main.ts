@@ -19,6 +19,10 @@ import './style.css'
 
 type ThemePref = 'auto' | 'eink' | 'dark'
 
+// Matches main/pageStore.ts's SCRATCHPAD_RESULT_ID -- see the comment there
+// for why this is a duplicated literal rather than a shared import.
+const SCRATCHPAD_RESULT_ID = '__scratchpad__'
+
 const statusEl = document.getElementById('status') as HTMLDivElement
 const statusBarEl = document.getElementById('status-bar') as HTMLDivElement
 const themeCompartment = new Compartment()
@@ -111,6 +115,32 @@ function exitScratchpadUi(): void {
   scratchpadToggleEl.classList.remove('active')
 }
 
+async function enterScratchpad(): Promise<void> {
+  await flushCurrentEditor()
+  pageBeforeScratchpad = activePageId
+  activePageId = null
+  if (saveTimer !== undefined) {
+    clearTimeout(saveTimer)
+    saveTimer = undefined
+  }
+  viewingScratchpad = true
+  scratchpadToggleEl.classList.add('active')
+  const content = await window.api.loadScratchpad()
+  replaceContent(content)
+  sidebar.setActive(null)
+  updateTitle('Scratchpad')
+  updateWordCount()
+}
+
+async function exitScratchpad(): Promise<void> {
+  await flushScratchSave()
+  const restoreId = pageBeforeScratchpad
+  exitScratchpadUi()
+  if (restoreId && pages.some((p) => p.id === restoreId)) await switchToPage(restoreId)
+  else if (pages.length > 0) await switchToPage(pages[0].id)
+  else await createNewPage()
+}
+
 async function switchToPage(id: string): Promise<void> {
   if (!viewingScratchpad && id === activePageId) return
   const token = ++switchToken
@@ -128,7 +158,11 @@ async function switchToPage(id: string): Promise<void> {
 }
 
 async function jumpToResult(result: SearchResult): Promise<void> {
-  if (result.pageId !== activePageId) await switchToPage(result.pageId)
+  if (result.pageId === SCRATCHPAD_RESULT_ID) {
+    if (!viewingScratchpad) await enterScratchpad()
+  } else if (result.pageId !== activePageId) {
+    await switchToPage(result.pageId)
+  }
   view.dispatch({
     selection: { anchor: result.from, head: result.to },
     effects: EditorView.scrollIntoView(result.from, { y: 'center' })
@@ -317,29 +351,8 @@ hyperfocusToggleEl.addEventListener('click', () => handleToggleHyperfocus())
 const scratchpadToggleEl = document.getElementById('scratchpad-toggle') as HTMLButtonElement
 
 async function toggleScratchpad(): Promise<void> {
-  if (viewingScratchpad) {
-    await flushScratchSave()
-    const restoreId = pageBeforeScratchpad
-    exitScratchpadUi()
-    if (restoreId && pages.some((p) => p.id === restoreId)) await switchToPage(restoreId)
-    else if (pages.length > 0) await switchToPage(pages[0].id)
-    else await createNewPage()
-    return
-  }
-  await flushCurrentEditor()
-  pageBeforeScratchpad = activePageId
-  activePageId = null
-  if (saveTimer !== undefined) {
-    clearTimeout(saveTimer)
-    saveTimer = undefined
-  }
-  viewingScratchpad = true
-  scratchpadToggleEl.classList.add('active')
-  const content = await window.api.loadScratchpad()
-  replaceContent(content)
-  sidebar.setActive(null)
-  updateTitle('Scratchpad')
-  updateWordCount()
+  if (viewingScratchpad) await exitScratchpad()
+  else await enterScratchpad()
   view.focus()
 }
 

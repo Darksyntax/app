@@ -170,18 +170,27 @@ function clipSnippet(line: string, start: number, end: number): { snippet: strin
 const MAX_RESULTS_PER_PAGE = 20
 const MAX_TOTAL_RESULTS = 200
 
+// Sentinel pageId marking scratchpad matches -- checked against the matching
+// literal in the renderer (main.ts/crossPageSearch.ts) to route a click there
+// instead of treating it as a real page id. Kept as a plain duplicated string
+// rather than a shared import: the main and renderer bundles are built
+// separately, and pulling code across that boundary is more trouble than
+// it's worth for one constant.
+export const SCRATCHPAD_RESULT_ID = '__scratchpad__'
+
 // Plain case-insensitive substring search across every page, not just the one
 // currently open -- a novelist working across many chapters needs to find a
 // line without manually opening each page. No regex UI to keep it simple.
+// Also searches the scratchpad, tagged with SCRATCHPAD_RESULT_ID so the
+// renderer can call it out separately from real pages.
 export function searchPages(query: string): SearchResult[] {
   const q = query.trim()
   if (q.length < 2) return []
   const needle = q.toLowerCase()
   const results: SearchResult[] = []
 
-  for (const page of listPages()) {
-    if (results.length >= MAX_TOTAL_RESULTS) break
-    const content = loadPageContent(page.id)
+  function collect(content: string, pageId: string, pageTitle: string): void {
+    if (results.length >= MAX_TOTAL_RESULTS) return
     const lower = content.toLowerCase()
     let searchFrom = 0
     let countForPage = 0
@@ -199,8 +208,8 @@ export function searchPages(query: string): SearchResult[] {
       const clipped = clipSnippet(lineText, matchStart, matchEnd)
 
       results.push({
-        pageId: page.id,
-        pageTitle: page.title || 'Untitled',
+        pageId,
+        pageTitle,
         from: idx,
         to: idx + q.length,
         snippet: clipped.snippet,
@@ -212,6 +221,13 @@ export function searchPages(query: string): SearchResult[] {
       searchFrom = idx + q.length
     }
   }
+
+  for (const page of listPages()) {
+    if (results.length >= MAX_TOTAL_RESULTS) break
+    collect(loadPageContent(page.id), page.id, page.title || 'Untitled')
+  }
+
+  collect(loadScratchpad(), SCRATCHPAD_RESULT_ID, 'Notes')
 
   return results
 }
