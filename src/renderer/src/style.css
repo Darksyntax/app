@@ -214,6 +214,19 @@ body {
   display: none;
 }
 
+.guide-section {
+  padding: 14px 16px 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.guide-section:first-child {
+  padding-top: 8px;
+}
+
 .guide-row {
   display: flex;
   align-items: baseline;
