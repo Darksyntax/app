@@ -358,16 +358,13 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
   if (themePref === 'auto') applyTheme('auto')
 })
 
-// Hidden fourth theme -- rapid-clicking the moon unlocks "oceanic" into the
+// Hidden fourth theme -- right-clicking the moon unlocks "oceanic" into the
 // cycle permanently (remembered in localStorage), applying it immediately
 // as the reward. Already-unlocked from a prior session if the stored pref
 // itself is 'oceanic', in case the flag and pref ever drift apart.
 const OCEANIC_UNLOCK_KEY = 'calliope:oceanicUnlocked'
-const RAPID_CLICKS_TO_UNLOCK = 5
-const RAPID_CLICK_WINDOW_MS = 1500
 
 let oceanicUnlocked = localStorage.getItem(OCEANIC_UNLOCK_KEY) === 'true' || themePref === 'oceanic'
-let rapidClickTimes: number[] = []
 
 function cycleTheme(): void {
   const cycle: ThemePref[] = oceanicUnlocked ? ['auto', 'eink', 'dark', 'oceanic'] : ['auto', 'eink', 'dark']
@@ -377,21 +374,16 @@ function cycleTheme(): void {
   applyTheme(themePref)
 }
 
-themeToggleEl.addEventListener('click', () => {
-  const now = Date.now()
-  rapidClickTimes = [...rapidClickTimes, now].filter((t) => now - t <= RAPID_CLICK_WINDOW_MS)
+themeToggleEl.addEventListener('click', () => cycleTheme())
 
-  if (!oceanicUnlocked && rapidClickTimes.length >= RAPID_CLICKS_TO_UNLOCK) {
-    oceanicUnlocked = true
-    rapidClickTimes = []
-    localStorage.setItem(OCEANIC_UNLOCK_KEY, 'true')
-    themePref = 'oceanic'
-    localStorage.setItem('calliope:theme', themePref)
-    applyTheme(themePref)
-    return
-  }
-
-  cycleTheme()
+themeToggleEl.addEventListener('contextmenu', (e) => {
+  e.preventDefault()
+  if (oceanicUnlocked) return
+  oceanicUnlocked = true
+  localStorage.setItem(OCEANIC_UNLOCK_KEY, 'true')
+  themePref = 'oceanic'
+  localStorage.setItem('calliope:theme', themePref)
+  applyTheme(themePref)
 })
 
 // --- Markdown syntax visibility -----------------------------------------
