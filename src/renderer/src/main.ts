@@ -8,7 +8,7 @@ import { GFM } from '@lezer/markdown'
 import { livePreview, toggleShowMarkup, toggleShowMarkupEffect } from './editor/livePreview'
 import { smartTypography } from './editor/smartTypography'
 import { smartMarkdownKeymap } from './editor/markdownKeymap'
-import { einkTheme, darkTheme } from './editor/theme'
+import { einkTheme, darkTheme, oceanicTheme } from './editor/theme'
 import { hyperfocusExtension, toggleHyperfocusMode, toggleHyperfocusModeEffect, typewriterExtension } from './editor/modes'
 import { initSidebar } from './sidebar'
 import { initSidebarViews } from './guide'
@@ -18,7 +18,7 @@ import { showToast } from './toast'
 import type { PageMeta, SearchResult } from '../../preload/index'
 import './style.css'
 
-type ThemePref = 'auto' | 'eink' | 'dark'
+type ThemePref = 'auto' | 'eink' | 'dark' | 'oceanic'
 
 // Matches main/pageStore.ts's SCRATCHPAD_RESULT_ID -- see the comment there
 // for why this is a duplicated literal rather than a shared import.
@@ -327,7 +327,7 @@ void init()
 
 // --- Theme ------------------------------------------------------------
 
-function resolveTheme(pref: ThemePref): 'eink' | 'dark' {
+function resolveTheme(pref: ThemePref): 'eink' | 'dark' | 'oceanic' {
   if (pref === 'auto') return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'eink'
   return pref
 }
@@ -339,9 +339,11 @@ const themeToggleEl = document.getElementById('theme-toggle') as HTMLButtonEleme
 
 function applyTheme(pref: ThemePref): void {
   const effective = resolveTheme(pref)
-  view.dispatch({ effects: themeCompartment.reconfigure(effective === 'dark' ? darkTheme : einkTheme) })
+  const themeExtension = effective === 'dark' ? darkTheme : effective === 'oceanic' ? oceanicTheme : einkTheme
+  view.dispatch({ effects: themeCompartment.reconfigure(themeExtension) })
   document.documentElement.classList.toggle('theme-dark', effective === 'dark')
   document.documentElement.classList.toggle('theme-eink', effective === 'eink')
+  document.documentElement.classList.toggle('theme-oceanic', effective === 'oceanic')
   // A dot marks "auto" specifically -- without it, clicking from auto to an
   // explicit theme that happens to match the system's current appearance
   // looked like the click did nothing, since the colors don't change either.
@@ -356,13 +358,41 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
   if (themePref === 'auto') applyTheme('auto')
 })
 
+// Hidden fourth theme -- rapid-clicking the moon unlocks "oceanic" into the
+// cycle permanently (remembered in localStorage), applying it immediately
+// as the reward. Already-unlocked from a prior session if the stored pref
+// itself is 'oceanic', in case the flag and pref ever drift apart.
+const OCEANIC_UNLOCK_KEY = 'calliope:oceanicUnlocked'
+const RAPID_CLICKS_TO_UNLOCK = 5
+const RAPID_CLICK_WINDOW_MS = 1500
+
+let oceanicUnlocked = localStorage.getItem(OCEANIC_UNLOCK_KEY) === 'true' || themePref === 'oceanic'
+let rapidClickTimes: number[] = []
+
 function cycleTheme(): void {
-  themePref = themePref === 'auto' ? 'eink' : themePref === 'eink' ? 'dark' : 'auto'
+  const cycle: ThemePref[] = oceanicUnlocked ? ['auto', 'eink', 'dark', 'oceanic'] : ['auto', 'eink', 'dark']
+  const idx = cycle.indexOf(themePref)
+  themePref = cycle[(idx + 1) % cycle.length]
   localStorage.setItem('calliope:theme', themePref)
   applyTheme(themePref)
 }
 
-themeToggleEl.addEventListener('click', () => cycleTheme())
+themeToggleEl.addEventListener('click', () => {
+  const now = Date.now()
+  rapidClickTimes = [...rapidClickTimes, now].filter((t) => now - t <= RAPID_CLICK_WINDOW_MS)
+
+  if (!oceanicUnlocked && rapidClickTimes.length >= RAPID_CLICKS_TO_UNLOCK) {
+    oceanicUnlocked = true
+    rapidClickTimes = []
+    localStorage.setItem(OCEANIC_UNLOCK_KEY, 'true')
+    themePref = 'oceanic'
+    localStorage.setItem('calliope:theme', themePref)
+    applyTheme(themePref)
+    return
+  }
+
+  cycleTheme()
+})
 
 // --- Markdown syntax visibility -----------------------------------------
 

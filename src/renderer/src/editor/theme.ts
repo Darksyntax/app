@@ -247,6 +247,25 @@ const darkVars = EditorView.theme(
   { dark: true }
 )
 
+// A hidden fourth theme, unlocked by rapid-clicking the moon icon -- colors
+// lifted directly from materialshell's "Oceanic" Ghostty palette
+// (github.com/carloscuesta/materialshell), not reinvented.
+const oceanicVars = EditorView.theme(
+  {
+    '&': {
+      '--ink-caret': '#ee6857',
+      '--ink-muted': '#5f6f78',
+      '--ink-accent': '#40c4ff',
+      '--ink-accent-faint': 'rgba(64, 196, 255, 0.4)',
+      '--ink-code-bg': 'rgba(255, 255, 255, 0.07)',
+      '--ink-selection': 'rgba(64, 196, 255, 0.2)',
+      backgroundColor: '#263238',
+      color: '#a1b0b8'
+    }
+  },
+  { dark: true }
+)
+
 const highlightStyle = syntaxHighlighting(
   HighlightStyle.define([
     { tag: t.meta, color: 'var(--ink-muted)' },
@@ -258,3 +277,4 @@ const highlightStyle = syntaxHighlighting(
 
 export const einkTheme = [shared, einkVars, highlightStyle]
 export const darkTheme = [shared, darkVars, highlightStyle]
+export const oceanicTheme = [shared, oceanicVars, highlightStyle]

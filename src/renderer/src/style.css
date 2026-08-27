@@ -24,6 +24,20 @@
   color-scheme: dark;
 }
 
+/* Hidden fourth theme -- see editor/theme.ts's oceanicVars for where these
+   colors come from. */
+:root.theme-oceanic {
+  --bg: #263238;
+  --text: #a1b0b8;
+  --muted: #5f6f78;
+  --sidebar-bg: #1e272c;
+  --row-hover: rgba(255, 255, 255, 0.05);
+  --row-active: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.08);
+  --grain-opacity: 0;
+  color-scheme: dark;
+}
+
 * {
   box-sizing: border-box;
 }
