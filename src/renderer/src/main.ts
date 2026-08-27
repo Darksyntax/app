@@ -254,6 +254,10 @@ const view = new EditorView({
       history(),
       drawSelection(),
       EditorView.lineWrapping,
+      // CodeMirror hardcodes spellcheck="false" on its content element (it's
+      // built as a code editor by default) -- override it, since this is a
+      // prose editor and native red-squiggle spellcheck is expected here.
+      EditorView.contentAttributes.of({ spellcheck: 'true' }),
       markdown({ codeLanguages: languages, extensions: [GFM], addKeymap: false }),
       livePreview,
       smartTypography,
