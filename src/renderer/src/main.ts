@@ -265,7 +265,10 @@ const sidebar = initSidebar({
   onReorder: (orderedIds) => void window.api.reorderPages(orderedIds)
 })
 
-const sidebarViews = initSidebarViews(() => sidebar.setVisible(true))
+const sidebarViews = initSidebarViews({
+  isSidebarVisible: () => sidebar.isVisible(),
+  setSidebarVisible: (visible) => sidebar.setVisible(visible)
+})
 const crossPageSearch = initCrossPageSearch((result) => void jumpToResult(result))
 
 // --- Editor setup ---------------------------------------------------------

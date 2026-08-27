@@ -4,12 +4,19 @@ export interface SidebarViewsController {
   setView: (view: SidebarView) => void
 }
 
+export interface SidebarViewsHost {
+  isSidebarVisible: () => boolean
+  setSidebarVisible: (visible: boolean) => void
+}
+
 // The rail lets the sidebar switch between Pages, the Markdown Guide, and
 // cross-page Search without shrinking the pages list's available height,
 // unlike the collapsible-drawer approach this replaced. The rail stays
-// visible even when #sidebar-main is closed, so picking a view here must
-// also reopen the panel -- onViewSelected does that (see main.ts).
-export function initSidebarViews(onViewSelected?: () => void): SidebarViewsController {
+// visible even when #sidebar-main is closed, so a rail click has two jobs:
+// picking a different view reopens the panel showing it, while clicking the
+// already-active view's icon again closes the panel -- the same activity-bar
+// pattern as the standalone toggle button beneath these three.
+export function initSidebarViews(host: SidebarViewsHost): SidebarViewsController {
   const railPages = document.getElementById('rail-pages') as HTMLButtonElement
   const railGuide = document.getElementById('rail-guide') as HTMLButtonElement
   const railSearch = document.getElementById('rail-search') as HTMLButtonElement
@@ -43,18 +50,18 @@ export function initSidebarViews(onViewSelected?: () => void): SidebarViewsContr
     sidebarTitle.textContent = titles[view]
   }
 
-  railPages.addEventListener('click', () => {
-    setView('pages')
-    onViewSelected?.()
-  })
-  railGuide.addEventListener('click', () => {
-    setView('guide')
-    onViewSelected?.()
-  })
-  railSearch.addEventListener('click', () => {
-    setView('search')
-    onViewSelected?.()
-  })
+  function handleRailClick(view: SidebarView, button: HTMLButtonElement): void {
+    if (host.isSidebarVisible() && button.classList.contains('active')) {
+      host.setSidebarVisible(false)
+      return
+    }
+    setView(view)
+    host.setSidebarVisible(true)
+  }
+
+  railPages.addEventListener('click', () => handleRailClick('pages', railPages))
+  railGuide.addEventListener('click', () => handleRailClick('guide', railGuide))
+  railSearch.addEventListener('click', () => handleRailClick('search', railSearch))
 
   return { setView }
 }
