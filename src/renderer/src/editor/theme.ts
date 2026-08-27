@@ -18,6 +18,7 @@ const shared = EditorView.theme({
     lineHeight: '1.65',
     fontKerning: 'normal',
     fontVariantLigatures: 'common-ligatures',
+    fontVariantNumeric: 'oldstyle-nums proportional-nums',
     textRendering: 'optimizeLegibility',
     overflowY: 'auto'
   },
@@ -41,7 +42,7 @@ const shared = EditorView.theme({
     display: 'none'
   },
   '.cm-heading': {
-    fontWeight: '700'
+    fontWeight: '600'
   },
   '.cm-heading-1': { fontSize: '1.7em', lineHeight: '1.15', letterSpacing: '-0.015em' },
   '.cm-heading-2': { fontSize: '1.4em', lineHeight: '1.2', letterSpacing: '-0.012em' },
@@ -89,7 +90,9 @@ const shared = EditorView.theme({
     color: 'var(--ink-accent)',
     fontWeight: '600',
     textDecoration: 'underline',
-    textDecorationColor: 'var(--ink-accent-faint)'
+    textDecorationColor: 'var(--ink-accent-faint)',
+    textUnderlineOffset: '0.15em',
+    textDecorationThickness: '1px'
   },
   '.cm-hr-line': {
     position: 'relative',
