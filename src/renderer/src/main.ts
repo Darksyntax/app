@@ -348,7 +348,16 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
 })
 
 function cycleTheme(): void {
-  themePref = themePref === 'auto' ? 'eink' : themePref === 'eink' ? 'dark' : 'auto'
+  if (themePref === 'auto') {
+    // Auto already renders as whichever of eink/dark matches the system, so
+    // stepping to that same explicit value next would be a no-op click --
+    // go to the other one instead, which is always a visible change.
+    themePref = resolveTheme('auto') === 'dark' ? 'eink' : 'dark'
+  } else if (themePref === 'eink') {
+    themePref = 'dark'
+  } else {
+    themePref = 'auto'
+  }
   localStorage.setItem('calliope:theme', themePref)
   applyTheme(themePref)
 }
