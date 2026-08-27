@@ -139,6 +139,8 @@ app.whenReady().then(() => {
   // dialog.showMessageBox has no styling hooks); this just performs the delete.
   ipcMain.handle('pages:delete', (_event, id: string): void => pageStore.deletePage(id))
 
+  ipcMain.handle('pages:restore-last-deleted', (): PageMeta | null => pageStore.restoreLastDeleted())
+
   ipcMain.handle('pages:import', async (event): Promise<{ meta: PageMeta; content: string } | null> => {
     const win = BrowserWindow.fromWebContents(event.sender)
     if (!win) return null

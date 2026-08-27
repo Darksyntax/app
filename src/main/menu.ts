@@ -36,6 +36,7 @@ export function buildMenu(handlers: MenuHandlers): Menu {
       submenu: [
         { label: 'New Page', accelerator: 'CmdOrCtrl+N', click: () => handlers.onNewPage() },
         { label: 'Delete Page', accelerator: 'CmdOrCtrl+Shift+Backspace', click: () => send('menu:delete-page') },
+        { label: 'Restore Last Deleted Page', click: () => send('menu:restore-last-deleted') },
         { type: 'separator' },
         { label: 'Save Now', accelerator: 'CmdOrCtrl+S', click: () => send('menu:save') },
         { type: 'separator' },

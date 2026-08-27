@@ -32,6 +32,8 @@ const api = {
 
   deletePage: (id: string): Promise<void> => ipcRenderer.invoke('pages:delete', id),
 
+  restoreLastDeleted: (): Promise<PageMeta | null> => ipcRenderer.invoke('pages:restore-last-deleted'),
+
   reorderPages: (orderedIds: string[]): Promise<void> => ipcRenderer.invoke('pages:reorder', orderedIds),
 
   searchPages: (query: string): Promise<SearchResult[]> => ipcRenderer.invoke('pages:search', query),

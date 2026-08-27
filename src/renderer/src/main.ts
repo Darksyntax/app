@@ -14,6 +14,7 @@ import { initSidebar } from './sidebar'
 import { initSidebarViews } from './guide'
 import { initCrossPageSearch } from './crossPageSearch'
 import { confirmModal } from './modal'
+import { showToast } from './toast'
 import type { PageMeta, SearchResult } from '../../preload/index'
 import './style.css'
 
@@ -187,7 +188,7 @@ async function createNewPage(): Promise<void> {
 async function handleDeletePage(id: string): Promise<void> {
   const confirmed = await confirmModal({
     title: 'Delete this page?',
-    detail: 'This cannot be undone.',
+    detail: 'You can undo this right after, or restore it later from the File menu.',
     confirmLabel: 'Delete'
   })
   if (!confirmed) return
@@ -195,6 +196,7 @@ async function handleDeletePage(id: string): Promise<void> {
   const wasActive = id === activePageId
   pages = pages.filter((p) => p.id !== id)
   sidebar.removePage(id)
+  showToast('Page deleted', { actionLabel: 'Undo', onAction: () => void restoreLastDeletedPage() })
   if (!wasActive) return
   if (saveTimer !== undefined) {
     clearTimeout(saveTimer)
@@ -207,6 +209,28 @@ async function handleDeletePage(id: string): Promise<void> {
 
 function applyImportedPage(meta: PageMeta, content: string): void {
   if (viewingScratchpad) exitScratchpadUi()
+  pages.unshift(meta)
+  activePageId = meta.id
+  replaceContent(content)
+  sidebar.upsertPage(meta)
+  sidebar.setActive(meta.id)
+  updateTitle(meta.title)
+  updateWordCount()
+  view.focus()
+}
+
+// Only ever restores the single most recently deleted page -- see
+// pageStore.restoreLastDeleted for why. Reachable both from the "Undo" toast
+// right after a delete and from File > Restore Last Deleted Page later.
+async function restoreLastDeletedPage(): Promise<void> {
+  const meta = await window.api.restoreLastDeleted()
+  if (!meta) {
+    showToast('Nothing to restore')
+    return
+  }
+  await flushCurrentEditor()
+  if (viewingScratchpad) exitScratchpadUi()
+  const content = await window.api.loadPage(meta.id)
   pages.unshift(meta)
   activePageId = meta.id
   replaceContent(content)
@@ -380,6 +404,7 @@ window.api.onMenu('menu:new-page', () => void createNewPage())
 window.api.onMenu('menu:delete-page', () => {
   if (activePageId) void handleDeletePage(activePageId)
 })
+window.api.onMenu('menu:restore-last-deleted', () => void restoreLastDeletedPage())
 window.api.onMenu('menu:export', () => void doExport())
 window.api.onMenu('menu:reveal-folder', () => window.api.revealPagesFolder())
 window.api.onMenu('menu:change-location', () => {

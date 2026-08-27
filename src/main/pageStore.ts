@@ -58,6 +58,22 @@ function scratchpadPath(): string {
   return join(pagesRoot, 'scratch.md')
 }
 
+// Deleting a page never immediately unlinks it -- the file and its metadata
+// move here instead, so a delete can be undone (see restoreLastDeleted).
+// Only ever holds one entry: the single most recently deleted page, which is
+// all "undo my last delete" needs, without building a full trash browser.
+function trashDir(): string {
+  return join(pagesRoot, 'trash')
+}
+
+function trashMetaPath(): string {
+  return join(trashDir(), 'meta.json')
+}
+
+function trashFilePath(id: string): string {
+  return join(trashDir(), `${id}.md`)
+}
+
 function ensureDirs(): void {
   if (!existsSync(pagesDir())) mkdirSync(pagesDir(), { recursive: true })
 }
@@ -267,11 +283,62 @@ export function savePage(id: string, content: string): PageMeta | null {
   return pages[index]
 }
 
+function clearTrash(): void {
+  if (!existsSync(trashMetaPath())) return
+  try {
+    const { meta } = JSON.parse(readFileSync(trashMetaPath(), 'utf-8')) as { meta: PageMeta }
+    const file = trashFilePath(meta.id)
+    if (existsSync(file)) unlinkSync(file)
+  } catch {
+    // malformed trash state -- fall through and remove it anyway
+  }
+  unlinkSync(trashMetaPath())
+}
+
 export function deletePage(id: string): void {
-  const pages = readManifest().filter((p) => p.id !== id)
+  const pages = readManifest()
+  const target = pages.find((p) => p.id === id)
+  writeManifest(pages.filter((p) => p.id !== id))
+
+  const srcPath = pagePath(id)
+  if (!target || !existsSync(srcPath)) return
+
+  if (!existsSync(trashDir())) mkdirSync(trashDir(), { recursive: true })
+  clearTrash()
+  writeFileSync(trashMetaPath(), JSON.stringify({ meta: target }, null, 2), 'utf-8')
+  renameSync(srcPath, trashFilePath(id))
+}
+
+// Brings back the single most recently deleted page, if any -- placed at the
+// top of the list like a freshly created page rather than trying to restore
+// its exact former position, which could collide with pages created, deleted,
+// or reordered since.
+export function restoreLastDeleted(): PageMeta | null {
+  if (!existsSync(trashMetaPath())) return null
+  let deletedMeta: PageMeta
+  try {
+    deletedMeta = (JSON.parse(readFileSync(trashMetaPath(), 'utf-8')) as { meta: PageMeta }).meta
+  } catch {
+    unlinkSync(trashMetaPath())
+    return null
+  }
+
+  const trashedFile = trashFilePath(deletedMeta.id)
+  if (!existsSync(trashedFile)) {
+    unlinkSync(trashMetaPath())
+    return null
+  }
+
+  ensureDirs()
+  renameSync(trashedFile, pagePath(deletedMeta.id))
+  unlinkSync(trashMetaPath())
+
+  const pages = readManifest()
+  const minOrder = pages.length ? Math.min(...pages.map((p) => p.order ?? 0)) : 0
+  const restored: PageMeta = { ...deletedMeta, order: minOrder - 1, updatedAt: Date.now() }
+  pages.push(restored)
   writeManifest(pages)
-  const target = pagePath(id)
-  if (existsSync(target)) unlinkSync(target)
+  return restored
 }
 
 // orderedIds is the full list of page ids in their new desired top-to-bottom order.
@@ -320,16 +387,20 @@ export function relocatePagesRoot(newRoot: string): { ok: true } | { ok: false; 
   const oldPagesDir = pagesDir()
   const oldManifestPath = manifestPath()
   const oldScratchpadPath = scratchpadPath()
+  const oldTrashDir = trashDir()
   const newPagesDir = join(newRoot, 'pages')
   const newScratchpadPath = join(newRoot, 'scratch.md')
+  const newTrashDir = join(newRoot, 'trash')
   mkdirSync(newPagesDir, { recursive: true })
   if (existsSync(oldPagesDir)) cpSync(oldPagesDir, newPagesDir, { recursive: true })
   if (existsSync(oldManifestPath)) writeFileSync(newManifest, readFileSync(oldManifestPath))
   if (existsSync(oldScratchpadPath)) writeFileSync(newScratchpadPath, readFileSync(oldScratchpadPath))
+  if (existsSync(oldTrashDir)) cpSync(oldTrashDir, newTrashDir, { recursive: true })
 
   if (existsSync(oldPagesDir)) rmSync(oldPagesDir, { recursive: true, force: true })
   if (existsSync(oldManifestPath)) unlinkSync(oldManifestPath)
   if (existsSync(oldScratchpadPath)) unlinkSync(oldScratchpadPath)
+  if (existsSync(oldTrashDir)) rmSync(oldTrashDir, { recursive: true, force: true })
 
   pagesRoot = newRoot
   writeFileSync(locationConfigPath, JSON.stringify({ pagesRoot: newRoot }, null, 2), 'utf-8')
