@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "A lightweight, distraction-free writing app",
   "main": "./out/main/index.js",
-  "author": "you",
+  "author": "Fernando J Fernandez III",
   "private": true,
   "scripts": {
     "dev": "electron-vite dev",

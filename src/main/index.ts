@@ -94,7 +94,9 @@ app.whenReady().then(() => {
     applicationVersion: app.getVersion(),
     version: app.getVersion(),
     iconPath,
-    copyright: 'A lightweight, distraction-free writing app.'
+    credits: 'Designed and developed by Fernando J Fernandez III',
+    copyright:
+      'Copyright © 2026 Fernando J Fernandez III\n\nLicensed under the MIT License,\nsubject to the Commons Clause License Condition v1.0.'
   })
 
   if (is.dev) app.dock?.setIcon(iconPath)
