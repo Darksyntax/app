@@ -9,6 +9,16 @@ export interface PageMeta {
   updatedAt: number
 }
 
+export interface SearchResult {
+  pageId: string
+  pageTitle: string
+  from: number
+  to: number
+  snippet: string
+  matchStart: number
+  matchEnd: number
+}
+
 const api = {
   listPages: (): Promise<PageMeta[]> => ipcRenderer.invoke('pages:list'),
 
@@ -23,6 +33,16 @@ const api = {
   deletePage: (id: string): Promise<void> => ipcRenderer.invoke('pages:delete', id),
 
   reorderPages: (orderedIds: string[]): Promise<void> => ipcRenderer.invoke('pages:reorder', orderedIds),
+
+  searchPages: (query: string): Promise<SearchResult[]> => ipcRenderer.invoke('pages:search', query),
+
+  loadScratchpad: (): Promise<string> => ipcRenderer.invoke('scratchpad:load'),
+
+  saveScratchpad: (content: string): Promise<void> => ipcRenderer.invoke('scratchpad:save', content),
+
+  saveScratchpadSync: (content: string): void => {
+    ipcRenderer.sendSync('scratchpad:save-sync', content)
+  },
 
   importPage: (): Promise<{ meta: PageMeta; content: string } | null> => ipcRenderer.invoke('pages:import'),
 

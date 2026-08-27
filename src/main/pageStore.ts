@@ -12,6 +12,16 @@ export interface PageMeta {
   updatedAt: number
 }
 
+export interface SearchResult {
+  pageId: string
+  pageTitle: string
+  from: number
+  to: number
+  snippet: string
+  matchStart: number
+  matchEnd: number
+}
+
 // This fixed location never moves, unlike pagesRoot below -- it's where we
 // remember WHERE the user's chosen pages location actually is, so relocating
 // doesn't create a bootstrapping problem (we can't look inside a folder we
@@ -39,6 +49,13 @@ function pagesDir(): string {
 
 function manifestPath(): string {
   return join(pagesRoot, 'pages.json')
+}
+
+// Lives alongside pages.json but deliberately outside it -- the scratchpad is
+// a single freeform note for jotting ideas, not a page, so it never shows up
+// in the pages list, drag order, or word/character counts.
+function scratchpadPath(): string {
+  return join(pagesRoot, 'scratch.md')
 }
 
 function ensureDirs(): void {
@@ -135,6 +152,70 @@ export function loadPageContent(id: string): string {
   return readFileSync(target, 'utf-8')
 }
 
+// Clips a long matched line down to a display-sized window around the match,
+// keeping the match's position accurate within the clipped text.
+function clipSnippet(line: string, start: number, end: number): { snippet: string; matchStart: number; matchEnd: number } {
+  const MAX = 140
+  const PAD = 40
+  if (line.length <= MAX) return { snippet: line, matchStart: start, matchEnd: end }
+  const sliceStart = Math.max(0, start - PAD)
+  const sliceEnd = Math.min(line.length, end + PAD)
+  const prefix = sliceStart > 0 ? '…' : ''
+  const suffix = sliceEnd < line.length ? '…' : ''
+  const snippet = prefix + line.slice(sliceStart, sliceEnd) + suffix
+  const delta = prefix.length - sliceStart
+  return { snippet, matchStart: start + delta, matchEnd: end + delta }
+}
+
+const MAX_RESULTS_PER_PAGE = 20
+const MAX_TOTAL_RESULTS = 200
+
+// Plain case-insensitive substring search across every page, not just the one
+// currently open -- a novelist working across many chapters needs to find a
+// line without manually opening each page. No regex UI to keep it simple.
+export function searchPages(query: string): SearchResult[] {
+  const q = query.trim()
+  if (q.length < 2) return []
+  const needle = q.toLowerCase()
+  const results: SearchResult[] = []
+
+  for (const page of listPages()) {
+    if (results.length >= MAX_TOTAL_RESULTS) break
+    const content = loadPageContent(page.id)
+    const lower = content.toLowerCase()
+    let searchFrom = 0
+    let countForPage = 0
+
+    while (countForPage < MAX_RESULTS_PER_PAGE && results.length < MAX_TOTAL_RESULTS) {
+      const idx = lower.indexOf(needle, searchFrom)
+      if (idx === -1) break
+
+      const lineStart = content.lastIndexOf('\n', idx - 1) + 1
+      const lineEndIdx = content.indexOf('\n', idx)
+      const lineEnd = lineEndIdx === -1 ? content.length : lineEndIdx
+      const lineText = content.slice(lineStart, lineEnd)
+      const matchStart = idx - lineStart
+      const matchEnd = matchStart + q.length
+      const clipped = clipSnippet(lineText, matchStart, matchEnd)
+
+      results.push({
+        pageId: page.id,
+        pageTitle: page.title || 'Untitled',
+        from: idx,
+        to: idx + q.length,
+        snippet: clipped.snippet,
+        matchStart: clipped.matchStart,
+        matchEnd: clipped.matchEnd
+      })
+
+      countForPage++
+      searchFrom = idx + q.length
+    }
+  }
+
+  return results
+}
+
 export function createPage(initialContent = ''): PageMeta {
   ensureDirs()
   const now = Date.now()
@@ -188,6 +269,17 @@ export function reorderPages(orderedIds: string[]): void {
   writeManifest(pages)
 }
 
+export function loadScratchpad(): string {
+  const target = scratchpadPath()
+  if (!existsSync(target)) return ''
+  return readFileSync(target, 'utf-8')
+}
+
+export function saveScratchpad(content: string): void {
+  ensureDirs()
+  writeFileSync(scratchpadPath(), content, 'utf-8')
+}
+
 export function pageFilePath(id: string): string {
   return pagePath(id)
 }
@@ -211,13 +303,17 @@ export function relocatePagesRoot(newRoot: string): { ok: true } | { ok: false; 
   if (!existsSync(newRoot)) mkdirSync(newRoot, { recursive: true })
   const oldPagesDir = pagesDir()
   const oldManifestPath = manifestPath()
+  const oldScratchpadPath = scratchpadPath()
   const newPagesDir = join(newRoot, 'pages')
+  const newScratchpadPath = join(newRoot, 'scratch.md')
   mkdirSync(newPagesDir, { recursive: true })
   if (existsSync(oldPagesDir)) cpSync(oldPagesDir, newPagesDir, { recursive: true })
   if (existsSync(oldManifestPath)) writeFileSync(newManifest, readFileSync(oldManifestPath))
+  if (existsSync(oldScratchpadPath)) writeFileSync(newScratchpadPath, readFileSync(oldScratchpadPath))
 
   if (existsSync(oldPagesDir)) rmSync(oldPagesDir, { recursive: true, force: true })
   if (existsSync(oldManifestPath)) unlinkSync(oldManifestPath)
+  if (existsSync(oldScratchpadPath)) unlinkSync(oldScratchpadPath)
 
   pagesRoot = newRoot
   writeFileSync(locationConfigPath, JSON.stringify({ pagesRoot: newRoot }, null, 2), 'utf-8')

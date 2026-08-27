@@ -12,8 +12,9 @@ import { einkTheme, darkTheme } from './editor/theme'
 import { hyperfocusExtension, toggleHyperfocusMode, toggleHyperfocusModeEffect, typewriterExtension } from './editor/modes'
 import { initSidebar } from './sidebar'
 import { initSidebarViews } from './guide'
+import { initCrossPageSearch } from './crossPageSearch'
 import { confirmModal } from './modal'
-import type { PageMeta } from '../../preload/index'
+import type { PageMeta, SearchResult } from '../../preload/index'
 import './style.css'
 
 type ThemePref = 'auto' | 'eink' | 'dark'
@@ -26,6 +27,14 @@ let pages: PageMeta[] = []
 let activePageId: string | null = null
 let saveTimer: number | undefined
 let switchToken = 0
+
+// The scratchpad is a single freeform note, not a page -- it never appears in
+// `pages`/pages.json, never gets a row in the sidebar, and isn't counted in
+// any page's word/character stats. Viewing it just swaps what the shared
+// editor instance displays, the same way switching pages does.
+let viewingScratchpad = false
+let pageBeforeScratchpad: string | null = null
+let scratchSaveTimer: number | undefined
 
 function getContent(): string {
   return view.state.doc.toString()
@@ -77,10 +86,36 @@ async function flushSave(): Promise<void> {
   }
 }
 
+function scheduleScratchSave(): void {
+  if (scratchSaveTimer !== undefined) clearTimeout(scratchSaveTimer)
+  scratchSaveTimer = window.setTimeout(() => void flushScratchSave(), 500)
+}
+
+async function flushScratchSave(): Promise<void> {
+  if (scratchSaveTimer !== undefined) {
+    clearTimeout(scratchSaveTimer)
+    scratchSaveTimer = undefined
+  }
+  if (!viewingScratchpad) return
+  await window.api.saveScratchpad(getContent())
+}
+
+async function flushCurrentEditor(): Promise<void> {
+  if (viewingScratchpad) await flushScratchSave()
+  else await flushSave()
+}
+
+function exitScratchpadUi(): void {
+  viewingScratchpad = false
+  pageBeforeScratchpad = null
+  scratchpadToggleEl.classList.remove('active')
+}
+
 async function switchToPage(id: string): Promise<void> {
-  if (id === activePageId) return
+  if (!viewingScratchpad && id === activePageId) return
   const token = ++switchToken
-  await flushSave()
+  await flushCurrentEditor()
+  if (viewingScratchpad) exitScratchpadUi()
   const content = await window.api.loadPage(id)
   if (token !== switchToken) return
   activePageId = id
@@ -92,8 +127,18 @@ async function switchToPage(id: string): Promise<void> {
   view.focus()
 }
 
+async function jumpToResult(result: SearchResult): Promise<void> {
+  if (result.pageId !== activePageId) await switchToPage(result.pageId)
+  view.dispatch({
+    selection: { anchor: result.from, head: result.to },
+    effects: EditorView.scrollIntoView(result.from, { y: 'center' })
+  })
+  view.focus()
+}
+
 async function createNewPage(): Promise<void> {
-  await flushSave()
+  await flushCurrentEditor()
+  if (viewingScratchpad) exitScratchpadUi()
   const meta = await window.api.createPage()
   pages.unshift(meta)
   activePageId = meta.id
@@ -127,6 +172,7 @@ async function handleDeletePage(id: string): Promise<void> {
 }
 
 function applyImportedPage(meta: PageMeta, content: string): void {
+  if (viewingScratchpad) exitScratchpadUi()
   pages.unshift(meta)
   activePageId = meta.id
   replaceContent(content)
@@ -140,7 +186,7 @@ function applyImportedPage(meta: PageMeta, content: string): void {
 async function doImport(): Promise<void> {
   const result = await window.api.importPage()
   if (!result) return
-  await flushSave()
+  await flushCurrentEditor()
   applyImportedPage(result.meta, result.content)
 }
 
@@ -161,7 +207,8 @@ const sidebar = initSidebar({
   onReorder: (orderedIds) => void window.api.reorderPages(orderedIds)
 })
 
-initSidebarViews()
+const sidebarViews = initSidebarViews()
+const crossPageSearch = initCrossPageSearch((result) => void jumpToResult(result))
 
 // --- Editor setup ---------------------------------------------------------
 
@@ -185,7 +232,8 @@ const view = new EditorView({
       keymap.of([...smartMarkdownKeymap, ...defaultKeymap, ...historyKeymap, ...searchKeymap]),
       EditorView.updateListener.of((update) => {
         if (update.docChanged) {
-          scheduleSave()
+          if (viewingScratchpad) scheduleScratchSave()
+          else scheduleSave()
           updateWordCount()
         }
       })
@@ -264,6 +312,39 @@ function handleToggleHyperfocus(): void {
 
 hyperfocusToggleEl.addEventListener('click', () => handleToggleHyperfocus())
 
+// --- Scratchpad -----------------------------------------------------------
+
+const scratchpadToggleEl = document.getElementById('scratchpad-toggle') as HTMLButtonElement
+
+async function toggleScratchpad(): Promise<void> {
+  if (viewingScratchpad) {
+    await flushScratchSave()
+    const restoreId = pageBeforeScratchpad
+    exitScratchpadUi()
+    if (restoreId && pages.some((p) => p.id === restoreId)) await switchToPage(restoreId)
+    else if (pages.length > 0) await switchToPage(pages[0].id)
+    else await createNewPage()
+    return
+  }
+  await flushCurrentEditor()
+  pageBeforeScratchpad = activePageId
+  activePageId = null
+  if (saveTimer !== undefined) {
+    clearTimeout(saveTimer)
+    saveTimer = undefined
+  }
+  viewingScratchpad = true
+  scratchpadToggleEl.classList.add('active')
+  const content = await window.api.loadScratchpad()
+  replaceContent(content)
+  sidebar.setActive(null)
+  updateTitle('Scratchpad')
+  updateWordCount()
+  view.focus()
+}
+
+scratchpadToggleEl.addEventListener('click', () => void toggleScratchpad())
+
 // --- Status bar visibility ---------------------------------------------
 
 let statusVisible = localStorage.getItem('calliope:statusVisible') !== 'false'
@@ -277,7 +358,7 @@ function toggleStatusVisible(): void {
 
 // --- Menu wiring ----------------------------------------------------------
 
-window.api.onMenu('menu:save', () => void flushSave())
+window.api.onMenu('menu:save', () => void flushCurrentEditor())
 window.api.onMenu('menu:new-page', () => void createNewPage())
 window.api.onMenu('menu:delete-page', () => {
   if (activePageId) void handleDeletePage(activePageId)
@@ -286,20 +367,26 @@ window.api.onMenu('menu:export', () => void doExport())
 window.api.onMenu('menu:reveal-folder', () => window.api.revealPagesFolder())
 window.api.onMenu('menu:change-location', () => {
   void (async () => {
-    await flushSave()
+    await flushCurrentEditor()
     await window.api.changePagesLocation()
   })()
 })
 window.api.onMenu('menu:toggle-sidebar', () => sidebar.toggle())
 window.api.onMenu('menu:find', () => openSearchPanel(view))
+window.api.onMenu('menu:find-all', () => {
+  if (!sidebar.isVisible()) sidebar.setVisible(true)
+  sidebarViews.setView('search')
+  crossPageSearch.focus()
+})
 window.api.onMenu('menu:toggle-hyperfocus', () => handleToggleHyperfocus())
 window.api.onMenu('menu:toggle-wordcount', () => toggleStatusVisible())
 window.api.onMenu('menu:toggle-theme', () => cycleTheme())
 window.api.onMenu('menu:toggle-markup', () => handleToggleShowMarkup())
+window.api.onMenu('menu:toggle-scratchpad', () => void toggleScratchpad())
 
 window.api.onPagesImported(({ meta, content }) => {
   void (async () => {
-    await flushSave()
+    await flushCurrentEditor()
     applyImportedPage(meta, content)
   })()
 })
@@ -307,7 +394,9 @@ window.api.onPagesImported(({ meta, content }) => {
 // --- Flush on quit ------------------------------------------------------
 
 window.addEventListener('beforeunload', () => {
-  if (saveTimer !== undefined && activePageId) {
+  if (viewingScratchpad) {
+    if (scratchSaveTimer !== undefined) window.api.saveScratchpadSync(getContent())
+  } else if (saveTimer !== undefined && activePageId) {
     window.api.savePageSync(activePageId, getContent())
   }
 })

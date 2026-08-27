@@ -59,7 +59,8 @@ export function buildMenu(handlers: MenuHandlers): Menu {
         { role: 'paste' },
         { role: 'selectAll' },
         { type: 'separator' },
-        { label: 'Find', accelerator: 'CmdOrCtrl+F', click: () => send('menu:find') }
+        { label: 'Find', accelerator: 'CmdOrCtrl+F', click: () => send('menu:find') },
+        { label: 'Find in All Pages', accelerator: 'CmdOrCtrl+Shift+F', click: () => send('menu:find-all') }
       ]
     },
     {
@@ -69,6 +70,7 @@ export function buildMenu(handlers: MenuHandlers): Menu {
         { type: 'separator' },
         { label: 'Toggle Markdown Syntax', accelerator: 'CmdOrCtrl+/', click: () => send('menu:toggle-markup') },
         { label: 'Toggle Hyperfocus Mode', accelerator: 'CmdOrCtrl+.', click: () => send('menu:toggle-hyperfocus') },
+        { label: 'Toggle Scratchpad', accelerator: 'CmdOrCtrl+Shift+N', click: () => send('menu:toggle-scratchpad') },
         { label: 'Toggle Word Count', accelerator: 'CmdOrCtrl+Shift+W', click: () => send('menu:toggle-wordcount') },
         { type: 'separator' },
         { label: 'Toggle Dark Mode', accelerator: 'CmdOrCtrl+Shift+D', click: () => send('menu:toggle-theme') },

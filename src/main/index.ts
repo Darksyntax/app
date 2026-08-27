@@ -4,7 +4,7 @@ import { readFile, writeFile } from 'fs/promises'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { buildMenu } from './menu'
 import * as pageStore from './pageStore'
-import type { PageMeta } from './pageStore'
+import type { PageMeta, SearchResult } from './pageStore'
 
 const FILE_FILTERS = [
   { name: 'Markdown', extensions: ['md', 'markdown', 'txt'] },
@@ -123,6 +123,17 @@ app.whenReady().then(() => {
   })
 
   ipcMain.handle('pages:reorder', (_event, orderedIds: string[]): void => pageStore.reorderPages(orderedIds))
+
+  ipcMain.handle('pages:search', (_event, query: string): SearchResult[] => pageStore.searchPages(query))
+
+  ipcMain.handle('scratchpad:load', (): string => pageStore.loadScratchpad())
+
+  ipcMain.handle('scratchpad:save', (_event, content: string): void => pageStore.saveScratchpad(content))
+
+  ipcMain.on('scratchpad:save-sync', (event, content: string) => {
+    pageStore.saveScratchpad(content)
+    event.returnValue = true
+  })
 
   // Confirmation happens in the renderer's own themed modal now (native
   // dialog.showMessageBox has no styling hooks); this just performs the delete.
